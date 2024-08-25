@@ -1,0 +1,111 @@
+lor if needed */
+body {
+  background-color: #e0e0e0; /* Light gray background */
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: #ffffff; /* Same background color */
+  border-radius: 20px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; /* Center align text and elements inside */
+}
+
+.auth-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #000;
+}
+
+.auth-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.auth-icon svg {
+  font-size: 6rem; /* Adjust icon size */
+  color: #444; /* You can change this color if needed */
+}
+
+/* Rest of the form styling remains unchanged */
+
+
+.auth-container .input-container {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 15px 20px 15px 50px;
+  border-radius: 25px;
+  border: none;
+  background-color: #e3e3e3;
+  font-size: 1rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.auth-container .input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.auth-container .eye-icon,
+.auth-container .show-password-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #333;
+}
+
+.auth-container .error {
+  color: red;
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.auth-container button {
+  width: 100%;
+  padding: 15px;
+  background-color: #068ceb;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+.auth-container button:hover {
+  background-color: #333333;
+}
+
+.auth-container .create-account {
+  background-color: #4f9dff;
+  margin-top: 10px;
+}
+
+.auth-container .create-account:hover {
+  background-color: #333333;
+}

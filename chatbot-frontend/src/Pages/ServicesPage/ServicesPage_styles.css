@@ -1,0 +1,12 @@
+/* styles.css หรือไฟล์ CSS ที่ใช้ในโปรเจกต์ */
+.bg-primary {
+  background-color: #f8a95a; /* สีพื้นหลังหลัก */
+}
+
+.text-jet {
+  color: #000000; /* สีข้อความหลัก */
+}
+
+.bg-whitesmoke {
+  background-color: #fffdfd; /* สีพื้นหลังของรายการบริการ */
+}

@@ -1,0 +1,13 @@
+/* styles.css หรือไฟล์ CSS ที่ใช้ในโปรเจกต์ */
+.bg-primary {
+    background-color: #f8a95a; /* สีพื้นหลังหลัก */
+  }
+  
+  .text-jet {
+    color: #333333; /* สีข้อความหลัก */
+  }
+  
+  .bg-whitesmoke {
+    background-color: #F5F5F5; /* สีพื้นหลังของรายการแหล่งที่มา */
+  }
+  

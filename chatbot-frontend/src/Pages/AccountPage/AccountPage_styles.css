@@ -1,0 +1,67 @@
+/* Light Mode (default) */
+.account-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.user-info {
+  background-color: #ffffff;
+  padding: 100px;
+  border-radius: 15px;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 15px;
+}
+
+.user-info strong {
+  text-align: right;
+  font-size: 1.2rem;
+}
+
+.user-info span {
+  font-size: 1.2rem;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: bold;
+  font-size: 2.2rem;
+  grid-column: span 2;
+}
+
+.error-message,
+.loading-message {
+  text-align: center;
+  font-size: 1.4rem;
+  color: red;
+}
+
+/* Night Mode */
+body.night-mode .user-info {
+  background-color: #333333; /* สีพื้นหลังของกล่องข้อมูลในโหมด Night */
+  color: #d0d0d0; /* สีข้อความในโหมด Night */
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.6); /* เงาที่เข้มขึ้น */
+}
+
+body.night-mode h2 {
+  color: #f0f0f0; /* สีของหัวเรื่องในโหมด Night */
+}
+
+body.night-mode .user-info strong {
+  color: #d0d0d0; /* สีของข้อความหัวข้อในโหมด Night */
+}
+
+body.night-mode .user-info span {
+  color: #e0e0e0; /* สีของข้อความเนื้อหาในโหมด Night */
+}
+
+body.night-mode .error-message,
+body.night-mode .loading-message {
+  color: #ff6b6b; /* สีข้อความของข้อผิดพลาดในโหมด Night */
+}

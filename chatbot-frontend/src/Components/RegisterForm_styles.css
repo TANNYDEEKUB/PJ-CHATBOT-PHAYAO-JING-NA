@@ -1,0 +1,160 @@
+/* Light Mode (default) */
+body {
+  background-color: #ffffff; /* Light background */
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #333333; /* Default text color */
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: #ffffff; /* White background */
+  border-radius: 15px; /* Rounded corners */
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; /* Center align text */
+}
+
+.auth-container h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #333333; /* Dark text color */
+}
+
+.auth-container .input-container {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 15px 20px 15px 50px;
+  border-radius: 25px;
+  border: 1px solid #dcdcdc; /* Light border */
+  background-color: #f9f9f9; /* Light gray background */
+  font-size: 1rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.auth-container .input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #666666; /* Medium gray icon color */
+}
+
+.auth-container .eye-icon,
+.auth-container .show-password-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666666;
+}
+
+.auth-container .error {
+  color: #ca2121; /* Red error color */
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.auth-container button {
+  width: 100%;
+  padding: 15px;
+  background-color: #5b8def; /* Button blue color */
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+.auth-container button:hover {
+  background-color: #4a7bd4; /* Darker blue on hover */
+}
+
+.auth-container .create-account {
+  background-color: #5b8def;
+  margin-top: 10px;
+}
+
+.auth-container .create-account:hover {
+  background-color: #4a7bd4;
+}
+
+.success {
+  color: #4CAF50; /* Green success color */
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Night Mode */
+body.night-mode {
+  background-color: #1c1c2b; /* Dark background for night mode */
+  color: #e0e0e0; /* Light text color */
+}
+
+body.night-mode .auth-container {
+  background-color: #333333; /* Dark background for container */
+  color: #e0e0e0; /* Light text color */
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4); /* Darker shadow */
+}
+
+body.night-mode .auth-container h2 {
+  color: #e0e0e0; /* Light text color */
+}
+
+body.night-mode .auth-container input {
+  background-color: #3a3a4d; /* Dark input background */
+  border: 1px solid #555555; /* Dark border */
+  color: #e0e0e0; /* Light input text color */
+}
+
+body.night-mode .auth-container .input-icon {
+  color: #999999; /* Lighter icon color */
+}
+
+body.night-mode .auth-container .eye-icon,
+body.night-mode .auth-container .show-password-icon {
+  color: #999999; /* Lighter icon color */
+}
+
+body.night-mode .auth-container button {
+  background-color: #4a7bd4; /* Button blue color for night mode */
+}
+
+body.night-mode .auth-container button:hover {
+  background-color: #3a6bc4; /* Darker blue on hover */
+}
+
+body.night-mode .auth-container .create-account {
+  background-color: #4a7bd4; /* Button blue color for night mode */
+}
+
+body.night-mode .auth-container .create-account:hover {
+  background-color: #3a6bc4; /* Darker blue on hover */
+}
+
+body.night-mode .auth-container .error {
+  color: #ff6666; /* Slightly lighter red for errors */
+}
+
+body.night-mode .success {
+  color: #66bb6a; /* Lighter green for success message */
+}

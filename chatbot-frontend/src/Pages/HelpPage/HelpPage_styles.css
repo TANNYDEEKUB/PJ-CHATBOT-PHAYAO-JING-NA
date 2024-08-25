@@ -1,0 +1,25 @@
+/* styles.css หรือไฟล์ CSS ที่ใช้ในโปรเจกต์ */
+.bg-primary {
+    background-color: #f8a95a; /* สีพื้นหลังหลัก */
+  }
+  
+  .text-jet {
+    color: #333333; /* สีข้อความหลัก */
+  }
+  
+  .bg-whitesmoke {
+    background-color: #F5F5F5; /* สีพื้นหลังของรายการช่วยเหลือ */
+  }
+  
+  .help-item {
+    padding: 1.5rem; /* เพิ่ม padding สำหรับความสวยงาม */
+    border: 1px solid #333333; /* เส้นขอบของรายการช่วยเหลือ */
+    border-radius: 0.5rem; /* มุมโค้งมน */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* เงา */
+    transition: box-shadow 0.3s ease; /* การเปลี่ยนเงาเมื่อ hover */
+  }
+  
+  .help-item:hover {
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1); /* เงาเมื่อ hover */
+  }
+  

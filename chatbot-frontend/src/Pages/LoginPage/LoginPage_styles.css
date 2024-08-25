@@ -1,0 +1,49 @@
+/* index.css */
+
+.login-page, .create-account-page {
+  background-color: #FFFAF0;
+  color: #333;
+  padding: 20px;
+  border: 1px solid #ccc;
+  margin: 50px auto;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.login-page h2, .create-account-page h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-page form, .create-account-page form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-page form div, .create-account-page form div {
+  margin-bottom: 15px;
+}
+
+.login-page form label, .create-account-page form label {
+  margin-bottom: 5px;
+}
+
+.login-page form input, .create-account-page form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.login-page form button, .create-account-page form button {
+  padding: 10px;
+  background-color: #ff4500;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.login-page form button:hover, .create-account-page form button:hover {
+  background-color: #e03e00;
+}

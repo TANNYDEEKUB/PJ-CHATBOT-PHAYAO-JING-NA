@@ -1,0 +1,227 @@
+/* Light Mode (default) */
+body {
+  background-color: #f5f5f5;
+  color: #333333;
+}
+
+/* Navbar container */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 2.5rem;
+  background-color: #ffffff; /* สีพื้นหลังขาวสำหรับธีม light */
+  color: #333333;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* เงาที่นุ่มนวลขึ้น */
+  border-bottom: 2px solid #f0f0f0; /* สีขอบล่างที่อ่อนลง */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar:hover {
+  background-color: #f5f5f5; /* สีพื้นหลังที่นุ่มนวลเมื่อ hover */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); /* เพิ่มเงาเล็กน้อยเมื่อ hover */
+}
+
+/* Navbar title */
+.navbar h1 {
+  font-size: 2rem;
+  margin: 0;
+  color: #333333;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.navbar h1:hover {
+  color: #5b8def; /* เปลี่ยนสีตัวอักษรเมื่อ hover */
+}
+
+/* Profile dropdown container */
+.profile-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* เพิ่มช่องว่างระหว่างไอคอน */
+  cursor: pointer;
+}
+
+.profile-icon {
+  color: #000000; /* สีพื้นฐานของไอคอนให้ตรงกับธีม light */
+  font-size: 1.5rem; /* ขนาดไอคอนใหญ่ขึ้น */
+  transition: color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.profile-icon:hover {
+  color: #3a78d5;
+  transform: scale(0.9); /* ขยายไอคอนเมื่อ hover */
+  box-shadow: 0 4px 8px rgba(253, 252, 252, 0.2); /* เพิ่มเงาเพื่อให้ดูโดดเด่น */
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: 2.5rem;
+  right: 0;
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 12px; /* เพิ่มขอบมน */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* เงาที่นุ่มนวลขึ้น */
+  width: 220px;
+  padding: 0.75rem 0;
+  z-index: 200;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(-10px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-dropdown:hover .dropdown-menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Dropdown item */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+  transform: translateX(10px); /* ขยับไอเทมเล็กน้อยเมื่อ hover */
+}
+
+/* Dropdown item icon */
+.dropdown-item svg {
+  margin-right: 10px;
+  color: #666666;
+  transition: color 0.3s ease;
+}
+
+.dropdown-item:hover svg {
+  color: #5b8def; /* เปลี่ยนสีไอคอนเมื่อ hover */
+}
+
+/* Help menu styles */
+#help-menu {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+#help-menu a,
+#help-menu button {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: #333333;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+}
+
+#help-menu a:hover,
+#help-menu button:hover {
+  color: #5b8def;
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05); /* ขยายเล็กน้อยเมื่อ hover */
+}
+
+/* Light/Night Mode Toggle Button */
+.toggle-theme-btn {
+  background-color: transparent;
+  border: none;
+  color: #333333;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease, transform 0.3s ease;
+  margin-right: 0.1rem; /* เพิ่มระยะห่างจากไอคอนข้างๆ */
+}
+
+.toggle-theme-btn:hover {
+  color: #5b8def;
+  transform: scale(1.2); /* ขยายเล็กน้อยเมื่อ hover */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  #help-menu {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .toggle-theme-btn {
+    margin-left: auto; /* Align the theme button to the right */
+  }
+}
+
+/* Night Mode */
+body.night-mode {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+}
+
+body.night-mode .navbar {
+  background-color: #333333;
+  color: #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid #444444;
+}
+
+body.night-mode .navbar h1 {
+  color: #e0e0e0;
+}
+
+body.night-mode .navbar:hover {
+  background-color: #444444;
+}
+
+body.night-mode .profile-icon {
+  color: #e0e0e0;
+}
+
+body.night-mode .dropdown-menu {
+  background-color: #444444;
+  color: #e0e0e0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.night-mode .dropdown-item {
+  background-color: transparent;
+  color: #e0e0e0;
+}
+
+body.night-mode .dropdown-item:hover {
+  background-color: #555555;
+}
+
+body.night-mode #help-menu a,
+body.night-mode #help-menu button {
+  color: #e0e0e0;
+}
+
+body.night-mode #help-menu a:hover,
+body.night-mode #help-menu button:hover {
+  color: #5b8def;
+  background-color: rgba(255, 255, 255, 0.1);
+}
