@@ -288,7 +288,7 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
             onChange={handleSearch}
             className="search-input w-full bg-blue-500 text-white p-2 rounded-lg mb-2"
           />
-          {/* ปุ่ม New Chat */}
+          {/* ปุ่ม New Chat 5555*/}
           <button
             onClick={handleNewChat}
             className="w-full bg-blue-500 text-white p-2 rounded-lg mt-2 flex items-center justify-center"
