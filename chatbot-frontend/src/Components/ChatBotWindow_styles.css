@@ -1,0 +1,154 @@
+/* ChatBotWindow Styles */
+.chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.chatbot-window {
+    width: 350px;
+    height: 500px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    background-color: #ffffff;
+    color: #333;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 15px 15px 0 0;
+}
+
+.chat-header h3 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.chat-body {
+    padding: 15px;
+    background-color: #ffffff;
+    height: 100%;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.chat-footer {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 0 0 15px 15px;
+}
+
+.chat-footer input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 20px;
+    outline: none;
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+.chat-footer button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-footer button:hover {
+    background-color: #0056b3;
+}
+
+/* Light Mode Scrollbar */
+.chat-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-body::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 10px;
+}
+
+.chat-body::-webkit-scrollbar-thumb {
+    background-color: #dcdcdc;
+    border-radius: 10px;
+}
+
+.chat-body::-webkit-scrollbar-thumb:hover {
+    background-color: #bfbfbf;
+}
+
+/* สำหรับ Night Mode */
+body.night-mode .chatbot-window {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+}
+
+body.night-mode .chat-header {
+    background-color: #444444;
+    color: #e0e0e0;
+}
+
+body.night-mode .chat-body {
+    background-color: #333333;
+    color: #e0e0e0;
+}
+
+body.night-mode .chat-footer {
+    background-color: #444444; /* ปรับสีของ footer ในโหมด Night Mode */
+    border-top: 1px solid #555555;
+}
+
+body.night-mode .chat-footer input {
+    background-color: #555555; /* ปรับสีของ input ในโหมด Night Mode */
+    color: #e0e0e0;
+    border: 1px solid #666666;
+}
+
+body.night-mode .chat-footer button {
+    background-color: #666666; /* ปรับสีของปุ่มในโหมด Night Mode */
+}
+
+body.night-mode .chat-footer button:hover {
+    background-color: #777777; /* ปรับสีของปุ่มเมื่อ hover ในโหมด Night Mode */
+}
+
+/* ปุ่มนำทางกลับไปหน้า Home */
+.home-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #333;
+    margin-left: 10px;
+}
+
+.home-button:hover {
+    color: #007bff;
+}
+
+body.night-mode .home-button {
+    color: #e0e0e0; /* สีปุ่มใน Night Mode */
+}
+
+body.night-mode .home-button:hover {
+    color: #ffffff; /* สีเมื่อ hover ใน Night Mode */
+}

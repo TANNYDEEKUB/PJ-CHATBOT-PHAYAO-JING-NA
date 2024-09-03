@@ -8,16 +8,40 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+ol {
+  list-style-type: decimal; /* ใช้ตัวเลขเป็นเลขลำดับ */
+  margin-left: 1.5rem; /* เยื้องรายการเข้ามาเล็กน้อย */
+  padding-left: 1rem; /* เพิ่มการเยื้องภายในของรายการ */
+}
+
+li {
+  margin-bottom: 0.5rem; /* เพิ่มการเว้นวรรคระหว่างรายการ */
+  line-height: 1.6; /* เพิ่มความสูงระหว่างบรรทัดเพื่อให้ข้อความไม่ติดกันเกินไป */
+  white-space: normal; /* ทำให้ข้อความต่อเนื่องกันในบรรทัดเดียวกัน */
+}
+
+p, span {
+  margin-bottom: 1rem; /* เพิ่มการเว้นวรรคหลังย่อหน้า */
+  line-height: 1.6; /* เพิ่มความสูงระหว่างบรรทัดเพื่อให้ข้อความไม่ติดกันเกินไป */
+  white-space: normal; /* ทำให้ข้อความต่อเนื่องกันในบรรทัดเดียวกัน */
+}
+
+
+
+strong {
+  font-weight: bold; /* ทำให้ข้อความที่เน้น (bold) ชัดเจนยิ่งขึ้น */
+}
+
 
 /* ปุ่มเปิด/ปิดประวัติการสนทนา */
 .chat-history-toggle-btn {
   position: fixed;
-  top: 5rem;
+  top: 4.9rem;
   left: 1rem;
   background-color: #f0f0f0;
   border: none;
   font-size: 1.5rem;
-  padding: 0.5rem;
+  padding: 0.7rem 0.7rem;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
@@ -102,8 +126,7 @@ body {
   background-color: #e0f7ff;
   color: #333;
   width: 100%;
-  padding: 0.75rem;
-  padding-right: 2.5rem;
+  padding: 0.75rem 1rem;
   border-radius: 15px;
   text-align: left;
   margin-bottom: 0.5rem;
@@ -112,6 +135,7 @@ body {
   box-sizing: border-box;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease, transform 0.3s ease;
+  line-height: 1.5;
 }
 
 .chat-item:hover {
@@ -150,7 +174,7 @@ body {
 }
 
 .add-chat-btn:hover {
-  background-color: #56b4ef;
+  background-color: #4a7bd4;
 }
 
 /* Chat history list */
@@ -214,6 +238,9 @@ body {
   color: #333;
   box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: box-shadow 0.3s ease;
+  line-height: 1.5;
+  height: 50px;
+  max-height: 150px;
 }
 
 /* Input style for Night Mode */

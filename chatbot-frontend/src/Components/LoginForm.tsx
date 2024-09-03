@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import './LoginForm_styles.css'
+import './LoginForm_styles.css';
 
 interface LoginFormProps {
   onLogin: (token: string) => void;
@@ -41,7 +41,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
       localStorage.setItem('authToken', token);
 
-      navigate('/');
+      navigate('/home'); // เปลี่ยนเส้นทางไปยังหน้า HomePage
     } catch (err: any) {
       console.error("Login Error:", err.response || err);
       if (err.response && err.response.status === 400) {

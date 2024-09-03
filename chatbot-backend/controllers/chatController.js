@@ -3,18 +3,18 @@ const axios = require('axios');
 const fewShotExamples = require('../models/data_few_shot');
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://api-inference.huggingface.co/models/PisutDeekub/PJ-MINI-MODEL-FINAL';
+const HUGGING_FACE_API_URL = 'https://u4m3o7af91o4hucf.us-east-1.aws.endpoints.huggingface.cloud';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 // ลิสต์คำหยาบภาษาไทย (สามารถเพิ่มคำได้ตามต้องการ)
-const THAI_BAD_WORDS = ['อีสัตว์','ไอสัตว์','สัตว์','สัส','อีสัส','ไอสัส','ควาย','อีควาย','ไอควาย','เหี้ย','อีเหี้ย','ไอเหี้ย','อีดอก','ตอแหล','อีตอแหล','ระยำ','ไอระยำ','อีระยำ','ชาติหมา','จัญไร','เฮงซวย','ชิบหาย','อีผี','โง่','อีโง่','ไอโง','มาร','ส้นตีน','หน้าโง่','ง่าว','แก่นแตด','เย็ดแม่','พ่อมึงตาย','แม่มึงตาย','ชาติชั่ว','สันดาน','เลว','อีช้างเย็ด','อีห่า','ไอห่า','ห่าราก','สัตว์นรก','ไอนรก','อีนรก','ชนชั้นต่ำ','โคตรพ่อมึง','โคตรแม่มึง','มึง','กู','หี','ควย','แตด','ฟัคยู','หน้าด้าน','เสือก','เสร่อ','สาระแน','วิปริต','หน้าหี','กระแดะ','เวร','อีเวร','ไอเวร','ดัดจริต']; // ตัวอย่างเช่นคำหยาบที่ใช้ในการกรอง
+const THAI_BAD_WORDS = ['อีสัตว์','ตาย','ไอสัตว์','สัตว์','สัส','อีสัส','ไอสัส','ควาย','อีควาย','ไอควาย','เหี้ย','อีเหี้ย','ไอเหี้ย','อีดอก','ตอแหล','อีตอแหล','ระยำ','ไอระยำ','อีระยำ','ชาติหมา','จัญไร','เฮงซวย','ชิบหาย','อีผี','โง่','อีโง่','ไอโง','มาร','ส้นตีน','หน้าโง่','ง่าว','แก่นแตด','เย็ดแม่','พ่อมึงตาย','แม่มึงตาย','ชาติชั่ว','สันดาน','เลว','อีช้างเย็ด','อีห่า','ไอห่า','ห่าราก','สัตว์นรก','ไอนรก','อีนรก','ชนชั้นต่ำ','โคตรพ่อมึง','โคตรแม่มึง','มึง','กู','หี','ควย','แตด','ฟัคยู','หน้าด้าน','เสือก','เสร่อ','สาระแน','วิปริต','หน้าหี','กระแดะ','เวร','อีเวร','ไอเวร','ดัดจริต']; // ลิสต์คำหยาบตามที่มีอยู่
 
-// ฟังก์ชันสำหรับกรองคำหยาบ
+// ฟังก์ชันกรองคำหยาบ
 const filterBadWords = (text) => {
   let filteredText = text;
   THAI_BAD_WORDS.forEach((badWord) => {
-    const regex = new RegExp(badWord, 'gi'); // ใช้ Regex เพื่อจับคำหยาบ
-    filteredText = filteredText.replace(regex, '***'); // แทนที่คำหยาบด้วย ***
+    const regex = new RegExp(badWord, 'gi');
+    filteredText = filteredText.replace(regex, '***');
   });
   return filteredText;
 };
@@ -29,41 +29,38 @@ class Prompter {
       "prompt_no_input": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Response:\n",
       "response_split": "### Response:"
     };
-    if (this._verbose) {
-      console.log(`Using prompt template: ${this.template['description']}`);
-    }
   }
 
-  generate_prompt(instruction, input = null, label = null) {
-    let res;
-    if (input) {
-      res = this.template["prompt_input"].replace("{instruction}", instruction).replace("{input}", input);
-    } else {
-      res = this.template["prompt_no_input"].replace("{instruction}", instruction);
-    }
-    if (label) {
-      res = `${res}${label}`;
-    }
-    if (this._verbose) {
-      console.log(res);
-    }
-    return res;
-  }
-
-  get_response(output) {
-    return output.split(this.template["response_split"])[1].trim();
+  generate_prompt(instruction, input = null) {
+    return input 
+      ? this.template["prompt_input"].replace("{instruction}", instruction).replace("{input}", input)
+      : this.template["prompt_no_input"].replace("{instruction}", instruction);
   }
 }
 
-// ฟังก์ชันสำหรับการเรียก API ของ Hugging Face
-const getBotResponse = async (instruction, input = null) => {
-  const prompter = new Prompter(); // สร้าง Prompter instance
+// ฟังก์ชันสำหรับการเรียก API ของ Hugging Face โดยรับพารามิเตอร์การตั้งค่า
+const getBotResponse = async (instruction, input = null, config = {}) => {
+  const prompter = new Prompter();
   const prompt = prompter.generate_prompt(instruction, input);
+
+  // Default configuration (ปรับแต่งค่าตามความเหมาะสม)
+  const defaultConfig = {
+    temperature: 0.2, 
+    top_p: 0.75, 
+    top_k: 50, 
+    num_beams: 2, 
+    repetition_penalty: 1.3, 
+    no_repeat_ngram: 3, 
+    max_new_tokens: 2000, 
+  };
+
+  // Merge user config with default config
+  const generationConfig = { ...defaultConfig, ...config };
 
   try {
     const response = await axios.post(
       HUGGING_FACE_API_URL,
-      { inputs: prompt },
+      { inputs: prompt, parameters: generationConfig },
       {
         headers: {
           Authorization: `Bearer ${HUGGING_FACE_API_KEY}`,
@@ -73,103 +70,98 @@ const getBotResponse = async (instruction, input = null) => {
     );
 
     if (response.data && response.data.length > 0) {
-      const generatedText = response.data[0].generated_text || 'ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้';
-
-      // แยกเฉพาะส่วนของ ### Response:
-      const responseSplit = generatedText.split("### Response:");
-      if (responseSplit.length > 1) {
-        return responseSplit[1].trim(); // ใช้เฉพาะส่วนที่อยู่หลัง ### Response:
+      const generatedText = response.data[0].generated_text || null;
+      if (generatedText) {
+        const responseSplit = generatedText.split("### Response:");
+        return responseSplit.length > 1 ? responseSplit[1].trim() : generatedText.trim();
       } else {
-        return generatedText.trim(); // หากไม่มีการแยก ก็ส่งคืนข้อความทั้งหมด
+        return null;
       }
     } else {
-      return 'ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้';
+      console.error("No response data from Hugging Face API");
+      return null;
     }
   } catch (error) {
-    console.error('Error calling Hugging Face API:', error);
-    return 'ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้';
+    console.error('Error calling Hugging Face API:', error.response ? error.response.data : error.message);
+    return null;
   }
 };
 
-// NLP function to enhance understanding of user input
+// ฟังก์ชันตรวจจับเจตนาของข้อความ
 const getIntentFromMessage = (message) => {
-  const lowerCaseMessage = message.toLowerCase(); // แปลงข้อความเป็นตัวพิมพ์เล็ก
+  const lowerCaseMessage = message.toLowerCase();
+  if (/ทำบอท|สร้างบอท|บอทถูกสร้าง|เว็ปไซทำโดย|สร้างเว็ปไซ|เว็ปถูกสร้าง|ทำai|สร้างai|aiถูกสร้าง/.test(lowerCaseMessage)) return 'ใครเป็นคนสร้าง';
+  else if (/รศ/.test(lowerCaseMessage)) return 'รศ';
+  else if (/ตอบ/.test(lowerCaseMessage)) return 'ตอบคำถาม';
+  else if (/ผศ/.test(lowerCaseMessage)) return 'ผศ';
+  else return null;
+};
 
-  // ใช้ Regex เพื่อตรวจจับคำหลัก
-  if (/ศ/.test(lowerCaseMessage)) {
-    return 'ศาสตราจารย์';
-  } else if (/รศ/.test(lowerCaseMessage)) {
-    return 'รองศาสตราจารย์';
-  } else if (/สวัสดี/.test(lowerCaseMessage)) {
-    return 'สวัสดี';
-  } else if (/ผศ/.test(lowerCaseMessage)) {
-    return 'ผู้ช่วยศาสตราจารย์';
-  } else {
-    return null; // กรณีที่ไม่มีการจับ intent ได้
+const formatBotResponse = (text) => {
+  let formattedText = text.trim();
+
+  // แทนที่ bullet points หรือรายการเลขที่จัดไม่ถูกต้อง
+  formattedText = formattedText.replace(/•\s*/g, "<li>");
+  formattedText = formattedText.replace(/(\d+)\.\s*/g, "<li>$1 ");
+
+  // ห่อข้อความทั้งหมดด้วย <ol> เพื่อให้รายการมีเลขหน้าข้อ
+  if (formattedText.includes("<li>")) {
+    formattedText = `<ol>${formattedText}</ol>`;
   }
+
+  // แทนที่ \n ด้วย <br> เพื่อให้เกิดการเว้นบรรทัดใหม่
+  formattedText = formattedText.replace(/\\n/g, "<br>");
+
+  // ถ้ามีการเว้นวรรค 2 ครั้งขึ้นไป จะเปลี่ยนเป็นแค่เว้นวรรค 1 ครั้ง
+  formattedText = formattedText.replace(/\s\s+/g, ' ');
+
+  return formattedText;
 };
 
 
-// Handle chat messages
-exports.handleChatMessage = async (req, res) => {
-  const { message, sessionId } = req.body;
-  const userId = req.user ? req.user._id : null;
 
+
+// ฟังก์ชันจัดการข้อความแชท
+exports.handleChatMessage = async (req, res) => {
+  const { message, sessionId, config } = req.body;
+  const userId = req.user ? req.user._id : null;
   let botResponse;
 
   try {
-    // กรองคำหยาบจากข้อความของผู้ใช้
     const filteredMessage = filterBadWords(message);
 
-    // ตรวจสอบว่ามีคำหยาบหรือไม่ หากมีให้ตอบกลับด้วยคำเตือน
     if (filteredMessage !== message) {
       botResponse = 'กรุณาอย่าใช้คำหยาบ';
     } else {
-      // ใช้ NLP ในการตรวจจับเจตนา (intent)
       const intent = getIntentFromMessage(filteredMessage);
-      console.log(`Intent detected: ${intent}`);
-
       if (intent && fewShotExamples[intent]) {
         botResponse = fewShotExamples[intent];
       } else {
-        botResponse = await getBotResponse(filteredMessage); // ใช้ฟังก์ชัน getBotResponse ที่เตรียมไว้
+        botResponse = await getBotResponse(filteredMessage, null, config);
+
+        // ตรวจสอบหากบอทไม่สามารถหาคำตอบได้
+        if (!botResponse) {
+          botResponse = 'ขออภัย เราไม่มีข้อมูลในขณะนี้';
+        } else {
+          botResponse = formatBotResponse(botResponse);
+        }
       }
     }
 
-    console.log(`User: ${filteredMessage}`);
-    console.log(`Bot Response: ${botResponse}`);
-
     if (userId) {
       let session;
-
       if (sessionId) {
         session = await Session.findById(sessionId);
-
-        if (!session) {
-          return res.status(404).json({ error: 'Session not found' });
-        }
+        if (!session) return res.status(404).json({ error: 'Session not found' });
 
         session.messages.push({ sender: 'user', text: filteredMessage }, { sender: 'bot', text: botResponse });
-
-        // ถ้า session ยังไม่มี userId ให้เพิ่ม userId
-        if (!session.userId) {
-          session.userId = userId;
-        }
+        if (!session.userId) session.userId = userId;
       } else {
-        // สร้างเซสชันใหม่
-        session = new Session({
-          userId,
-          messages: [{ sender: 'user', text: filteredMessage }, { sender: 'bot', text: botResponse }],
-        });
+        session = new Session({ userId, messages: [{ sender: 'user', text: filteredMessage }, { sender: 'bot', text: botResponse }] });
       }
-
-      // บันทึกเซสชันทันทีหลังจากบอทตอบกลับ
       await session.save();
-
-      // ส่งข้อมูลเซสชันใหม่กลับไปที่ไคลเอนต์เพื่ออัปเดต UI
       res.json({ reply: botResponse, sessionId: session._id });
     } else {
-      // หากผู้ใช้ไม่ได้ล็อกอิน ให้ส่งคำตอบกลับไปแต่ไม่บันทึกเซสชัน
       res.json({ reply: botResponse });
     }
   } catch (error) {
@@ -178,8 +170,7 @@ exports.handleChatMessage = async (req, res) => {
   }
 };
 
-
-// Get chat history
+// ฟังก์ชันดึงประวัติการสนทนา
 exports.getChatHistory = async (req, res) => {
   try {
     if (!req.user) {
@@ -194,7 +185,7 @@ exports.getChatHistory = async (req, res) => {
   }
 };
 
-// Delete chat session
+// ฟังก์ชันลบเซสชันการสนทนา
 exports.deleteChatSession = async (req, res) => {
   try {
     if (!req.user) {
@@ -209,7 +200,7 @@ exports.deleteChatSession = async (req, res) => {
   }
 };
 
-// Update session name
+// ฟังก์ชันอัปเดตชื่อเซสชัน
 exports.updateSessionName = async (req, res) => {
   try {
     if (!req.user) {
@@ -222,7 +213,7 @@ exports.updateSessionName = async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    session.name = name || 'การสนทนาใหม่'; // กำหนดค่าชื่อ
+    session.name = name || 'การสนทนาใหม่';
     await session.save();
     res.sendStatus(200);
   } catch (error) {

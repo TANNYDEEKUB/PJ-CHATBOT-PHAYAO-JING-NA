@@ -22,46 +22,25 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
-  // กำหนด state สำหรับเก็บข้อมูลข้อความในแชท
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>(() => {
     const savedMessages = token ? localStorage.getItem(`messages_${token}`) : localStorage.getItem("messages");
     return savedMessages ? JSON.parse(savedMessages) : [];
   });
 
-  // กำหนด state สำหรับ input ของผู้ใช้
   const [input, setInput] = useState("");
-
-  // กำหนด state สำหรับประวัติการสนทนา
   const [chatHistory, setChatHistory] = useState<{ _id: string; name: string; messages: { sender: string; text: string }[] }[]>(() => {
     const savedChatHistory = token ? localStorage.getItem(`chatHistory_${token}`) : localStorage.getItem("chatHistory");
     return savedChatHistory ? JSON.parse(savedChatHistory) : [];
   });
-
-  // กำหนด sessionId สำหรับแยกเซสชันการสนทนาแต่ละครั้ง
   const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem("sessionId"));
-
-  // กำหนดชื่อของการสนทนา
   const [chatName, setChatName] = useState<string>("");
-
-  // กำหนด state สำหรับการแก้ไขชื่อการสนทนา
   const [isEditingName, setIsEditingName] = useState<string | null>(null);
-
-  // กำหนดสถานะของผู้ใช้ว่าเข้าสู่ระบบหรือยัง
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
-
-  // กำหนดสถานะของการส่งข้อความ
   const [isSending, setIsSending] = useState<boolean>(false);
-
-  // กำหนดสถานะเปิด/ปิดของหน้าต่างประวัติการสนทนา
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
-
-  // กำหนดคำค้นหาในประวัติการสนทนา
   const [searchTerm, setSearchTerm] = useState("");
-
-  // ใช้ ref เพื่อเลื่อนหน้าจอไปยังข้อความล่าสุด
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ฟังก์ชันเพื่อดึงประวัติการสนทนาเมื่อผู้ใช้เข้าสู่ระบบ
   useEffect(() => {
     if (!token) return;
 
@@ -80,7 +59,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     fetchChatHistory();
   }, [token]);
 
-  // บันทึก sessionId ใน localStorage เมื่อมีการเปลี่ยนแปลง
   useEffect(() => {
     if (sessionId) {
       localStorage.setItem("sessionId", sessionId);
@@ -89,33 +67,30 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     }
   }, [sessionId]);
 
-  // บันทึกข้อความในแชทใน localStorage ทุกครั้งที่ข้อความเปลี่ยนแปลง
   useEffect(() => {
     if (token) {
       localStorage.setItem(`messages_${token}`, JSON.stringify(messages));
     } else {
       localStorage.setItem("messages", JSON.stringify(messages));
     }
-    scrollToBottom(); // เลื่อนหน้าจอไปยังข้อความล่าสุด
+    scrollToBottom();
   }, [messages, token]);
 
-  // ฟังก์ชันเพื่อเลื่อนหน้าจอไปยังข้อความล่าสุด
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // ฟังก์ชันสำหรับส่งข้อความ
   const handleSendMessage = async () => {
     if (!input.trim() || isSending) return;
-
+  
     setIsSending(true);
-
+  
     const userMessage = { sender: "user", text: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
-
+  
     try {
       const response = await axios.post(
         "http://localhost:3001/api/chat",
@@ -124,9 +99,18 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
-      const botMessage = { sender: "bot", text: response.data.reply };
+  
+      // แทนที่ \n ด้วย <br> และจัดลำดับรายการให้ถูกต้องด้วย <ol> และ <li>
+      const botMessage = {
+        sender: "bot",
+        text: response.data.reply
+          .replace(/\\n/g, "<br>") // แปลง \n เป็น <br>
+          .replace(/(\d+)\.\s/g, "<li>") // แปลงตัวเลขและจุดให้เป็น <li>
+          .replace(/<li>/g, "<li style='margin-bottom: 10px;'>") // เพิ่มการเว้นวรรคระหว่างบรรทัดด้วย margin-bottom
+      };
+  
       setMessages([...newMessages, botMessage]);
-
+  
       if (!sessionId) {
         setSessionId(response.data.sessionId);
         const updatedHistory = [...chatHistory, { _id: response.data.sessionId, name: "การสนทนาใหม่", messages: [...newMessages, botMessage] }];
@@ -141,20 +125,18 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
         setChatHistory(updatedChatHistory);
         localStorage.setItem(`chatHistory_${token}`, JSON.stringify(updatedChatHistory));
       }
-
-      // รีเซ็ตความสูงของ textarea หลังจากส่งข้อความ
-      document.querySelector("textarea").style.height = "40px"; // ค่าเริ่มต้น
+  
     } catch (error) {
       console.error(error);
       const errorMessage = { sender: "bot", text: "ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้" };
       setMessages([...newMessages, errorMessage]);
     }
-
+  
     setInput("");
     setIsSending(false);
   };
+  
 
-  // ฟังก์ชันสำหรับโหลดการสนทนาที่มีอยู่แล้ว
   const loadSession = (session: { _id: string; name: string; messages: { sender: string; text: string }[] }) => {
     if (isEditingName !== null) return;
 
@@ -164,7 +146,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     localStorage.setItem("sessionId", session._id);
   };
 
-  // ฟังก์ชันสำหรับลบเซสชันการสนทนา
   const handleDeleteSession = async (id: string) => {
     try {
       await axios.delete(`http://localhost:3001/api/chat/history/${id}`, {
@@ -183,7 +164,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     }
   };
 
-  // ฟังก์ชันสำหรับบันทึกชื่อการสนทนาใหม่
   const handleSaveChatName = async (id: string, newName: string) => {
     try {
       await axios.post(`http://localhost:3001/api/chat/history/name/${id}`, { name: newName }, {
@@ -198,7 +178,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     }
   };
 
-  // ฟังก์ชันสำหรับออกจากระบบ
   const handleLogout = () => {
     setToken(null);
     setIsAuthenticated(false);
@@ -211,7 +190,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     localStorage.removeItem("sessionId");
   };
 
-  // ฟังก์ชันสำหรับสร้างการสนทนาใหม่
   const handleNewChat = () => {
     if (isEditingName !== null) return;
 
@@ -220,38 +198,31 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     setChatName("");
   };
 
-  // ฟังก์ชันสำหรับสลับสถานะการแสดงผลประวัติการสนทนา
   const toggleChatHistory = () => {
     setIsChatHistoryOpen(!isChatHistoryOpen);
 
     const sidebar = document.querySelector(".chat-history-container");
     const toggleBtn = document.querySelector(".chat-history-toggle-btn");
 
-    // ตรวจสอบว่า sidebar และ toggleBtn ถูกต้องหรือไม่
     if (sidebar && toggleBtn) {
       if (!isChatHistoryOpen) {
-        // เมื่อเปิด ให้แสดง sidebar และปรับตำแหน่งปุ่ม
         sidebar.classList.add("open");
         toggleBtn.style.left = `${sidebar.getBoundingClientRect().width + 10}px`;
       } else {
-        // เมื่อปิด ให้ซ่อน sidebar และปรับตำแหน่งปุ่มกลับ
         sidebar.classList.remove("open");
         toggleBtn.style.left = "0.5rem";
       }
     }
   };
 
-  // ฟังก์ชันสำหรับจัดการการค้นหา
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  // กรองการสนทนาตามคำค้นหา
   const filteredChats = chatHistory.filter((chat) =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // จัดการการปรับขนาดหน้าจอ
   useEffect(() => {
     const handleResize = () => {
       const sidebar = document.querySelector(".chat-history-container");
@@ -263,7 +234,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
 
     window.addEventListener("resize", handleResize);
 
-    // ล้าง event listener เมื่อ component ถูก unmount
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -271,24 +241,21 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     <>
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
-      {/* ปุ่มเปิด/ปิดเมนูประวัติการสนทนา */}
       <button onClick={toggleChatHistory} className="chat-history-toggle-btn">
         <FontAwesomeIcon icon={isChatHistoryOpen ? faTimes : faBars} />
       </button>
 
       <div className={`chat-container ${isChatHistoryOpen ? "with-sidebar" : ""}`}>
-        {/* ส่วนประวัติการสนทนา */}
         <div className={`chat-history-container ${isChatHistoryOpen ? "open" : ""}`}>
           <h2>ประวัติการสนทนา</h2>
-          {/* ช่องค้นหา */}
           <input
             type="text"
             placeholder="ค้นหาการสนทนา..."
             value={searchTerm}
+        
             onChange={handleSearch}
             className="search-input w-full bg-blue-500 text-white p-2 rounded-lg mb-2"
           />
-          {/* ปุ่ม New Chat 5555*/}
           <button
             onClick={handleNewChat}
             className="w-full bg-blue-500 text-white p-2 rounded-lg mt-2 flex items-center justify-center"
@@ -361,9 +328,7 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
           )}
         </div>
 
-        {/* ส่วนเนื้อหาการสนทนา */}
         <div className={`chat-content-container ${isChatHistoryOpen ? "with-sidebar" : ""}`}>
-          {/* เพิ่มส่วนแสดงชื่อการสนทนา */}
           {chatName && (
             <div className="chat-name w-full text-center text-2xl font-semibold text-gray-800 p-4 bg-blue-200 rounded-t-lg">
               {chatName}
@@ -371,7 +336,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
           )}
 
           <div id="message-container" className="w-[90%] h-[97%] mt-4 mx-auto bg-[#FFFAF0] border-solid border-2 border-b-0 border-jet rounded-t-lg">
-            {/* เนื้อหาของข้อความที่ส่งไปมา */}
             <div id="message-log" className="w-full h-[80%] overflow-y-auto p-4">
               {messages.length === 0 && <div className="empty-chat-message">CHATBOT</div>}
               {messages.map((message, index) => (
@@ -380,9 +344,10 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
                   <p
                     className={`py-2 px-4 rounded-lg max-w-[75%] whitespace-pre-wrap break-words ${
                       message.sender === "user" ? "user-bubble" : "bot-bubble"
-                    }`}
+                                              }`}
+                      dangerouslySetInnerHTML={{ __html: message.text }}
                   >
-                    {message.text}
+                    
                   </p>
                 </div>
               ))}
@@ -394,13 +359,13 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  e.target.style.height = "auto"; // รีเซ็ตความสูงก่อน
-                  e.target.style.height = `${e.target.scrollHeight}px`; // ปรับความสูงให้พอดีกับเนื้อหา
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !isSending) {
                     e.preventDefault();
-                    handleSendMessage(); // เรียกฟังก์ชันส่งคำถาม
+                    handleSendMessage();
                   }
                 }}
                 placeholder="ช่องใส่คำถาม"

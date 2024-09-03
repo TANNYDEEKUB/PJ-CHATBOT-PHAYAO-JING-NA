@@ -5,25 +5,25 @@ import { LoginForm } from './Components/LoginForm';
 import { RegisterForm } from './Components/RegisterForm';
 import { Navbar } from './Components/NavBar';
 import { AccountPage } from './Pages/AccountPage/AccountPage';
-import  HelpPage  from './Pages/HelpPage/HelpPage';
+import HelpPage from './Pages/HelpPage/HelpPage';
+import MainPage from './Pages/MainPage/MainPage';  // Import MainPage
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('token'); // ดึง token จาก localStorage เมื่อโหลดแอป
+    return localStorage.getItem('token');
   });
 
   const handleLogin = (userToken: string) => {
     setToken(userToken);
-    localStorage.setItem('token', userToken); // เก็บ token ไว้ใน localStorage เมื่อเข้าสู่ระบบ
+    localStorage.setItem('token', userToken);
   };
 
   const handleLogout = () => {
     setToken(null);
-    localStorage.removeItem('token'); // ลบ token ออกจาก localStorage เมื่อออกจากระบบ
+    localStorage.removeItem('token');
   };
 
   useEffect(() => {
-    // ตรวจสอบว่า token ที่เก็บไว้ใน localStorage ยังใช้งานได้หรือไม่
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
@@ -34,7 +34,8 @@ export const App: React.FC = () => {
     <Router>
       <Navbar isAuthenticated={!!token} onLogout={handleLogout} />
       <Routes>
-        <Route path="/" element={<HomePage token={token} setToken={setToken} />} />
+        <Route path="/" element={<MainPage />} />  {/* Set MainPage as the default */}
+        <Route path="/home" element={<HomePage token={token} setToken={setToken} />} />
         <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/account" element={<AccountPage token={token} />} />
