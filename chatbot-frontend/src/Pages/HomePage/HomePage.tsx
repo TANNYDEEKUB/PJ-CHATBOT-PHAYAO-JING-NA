@@ -37,6 +37,8 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
   const [isEditingName, setIsEditingName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [isEditingMessage, setIsEditingMessage] = useState(false);
+  const [editMessageIndex, setEditMessageIndex] = useState<number | null>(null);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -84,13 +86,18 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
 
   const handleSendMessage = async () => {
     if (!input.trim() || isSending) return;
-  
+
+    if (isEditingMessage) {
+      handleSaveEditedMessage();
+      return;
+    }
+
     setIsSending(true);
-  
+
     const userMessage = { sender: "user", text: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
-  
+
     try {
       const response = await axios.post(
         "http://localhost:3001/api/chat",
@@ -99,43 +106,47 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
-  
-      // แทนที่ \n ด้วย <br> และจัดลำดับรายการให้ถูกต้องด้วย <ol> และ <li>
+
       const botMessage = {
         sender: "bot",
         text: response.data.reply
           .replace(/\\n/g, "<br>") // แปลง \n เป็น <br>
           .replace(/(\d+)\.\s/g, "<li>") // แปลงตัวเลขและจุดให้เป็น <li>
           .replace(/<li>/g, "<li style='margin-bottom: 10px;'>") // เพิ่มการเว้นวรรคระหว่างบรรทัดด้วย margin-bottom
+          .replace(/\n/g, "<br>") // แปลง \n อื่นๆ เป็น <br> อีกรอบเพื่อความแน่ใจ
       };
-  
+
       setMessages([...newMessages, botMessage]);
-  
+
       if (!sessionId) {
         setSessionId(response.data.sessionId);
-        const updatedHistory = [...chatHistory, { _id: response.data.sessionId, name: "การสนทนาใหม่", messages: [...newMessages, botMessage] }];
-        setChatHistory(updatedHistory);
-        localStorage.setItem(`chatHistory_${token}`, JSON.stringify(updatedHistory));
-      } else {
-        const updatedChatHistory = chatHistory.map((chat) =>
-          chat._id === sessionId
-            ? { ...chat, messages: [...chat.messages, userMessage, botMessage] }
-            : chat
-        );
-        setChatHistory(updatedChatHistory);
-        localStorage.setItem(`chatHistory_${token}`, JSON.stringify(updatedChatHistory));
       }
-  
     } catch (error) {
       console.error(error);
       const errorMessage = { sender: "bot", text: "ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้" };
       setMessages([...newMessages, errorMessage]);
     }
-  
+
     setInput("");
     setIsSending(false);
   };
-  
+
+  const handleEditMessage = (index: number) => {
+    setIsEditingMessage(true);
+    setEditMessageIndex(index);
+    setInput(messages[index].text);
+  };
+
+  const handleSaveEditedMessage = () => {
+    if (editMessageIndex !== null && input.trim()) {
+      const updatedMessages = [...messages];
+      updatedMessages[editMessageIndex] = { ...updatedMessages[editMessageIndex], text: input };
+      setMessages(updatedMessages);
+      setIsEditingMessage(false);
+      setEditMessageIndex(null);
+      setInput("");
+    }
+  };
 
   const loadSession = (session: { _id: string; name: string; messages: { sender: string; text: string }[] }) => {
     if (isEditingName !== null) return;
@@ -252,7 +263,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
             type="text"
             placeholder="ค้นหาการสนทนา..."
             value={searchTerm}
-        
             onChange={handleSearch}
             className="search-input w-full bg-blue-500 text-white p-2 rounded-lg mb-2"
           />
@@ -344,11 +354,14 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
                   <p
                     className={`py-2 px-4 rounded-lg max-w-[75%] whitespace-pre-wrap break-words ${
                       message.sender === "user" ? "user-bubble" : "bot-bubble"
-                                              }`}
-                      dangerouslySetInnerHTML={{ __html: message.text }}
-                  >
-                    
-                  </p>
+                    }`}
+                    dangerouslySetInnerHTML={{ __html: message.text }}
+                  ></p>
+                  {message.sender === "user" && (
+                    <button onClick={() => handleEditMessage(index)}>
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                  )}
                 </div>
               ))}
               <div ref={messagesEndRef} />

@@ -3,11 +3,11 @@ const axios = require('axios');
 const fewShotExamples = require('../models/data_few_shot');
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://u4m3o7af91o4hucf.us-east-1.aws.endpoints.huggingface.cloud';
+const HUGGING_FACE_API_URL = 'https://jaux9v1tjs68xvps.us-east-1.aws.endpoints.huggingface.cloud';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
-// ลิสต์คำหยาบภาษาไทย (สามารถเพิ่มคำได้ตามต้องการ)
-const THAI_BAD_WORDS = ['อีสัตว์','ตาย','ไอสัตว์','สัตว์','สัส','อีสัส','ไอสัส','ควาย','อีควาย','ไอควาย','เหี้ย','อีเหี้ย','ไอเหี้ย','อีดอก','ตอแหล','อีตอแหล','ระยำ','ไอระยำ','อีระยำ','ชาติหมา','จัญไร','เฮงซวย','ชิบหาย','อีผี','โง่','อีโง่','ไอโง','มาร','ส้นตีน','หน้าโง่','ง่าว','แก่นแตด','เย็ดแม่','พ่อมึงตาย','แม่มึงตาย','ชาติชั่ว','สันดาน','เลว','อีช้างเย็ด','อีห่า','ไอห่า','ห่าราก','สัตว์นรก','ไอนรก','อีนรก','ชนชั้นต่ำ','โคตรพ่อมึง','โคตรแม่มึง','มึง','กู','หี','ควย','แตด','ฟัคยู','หน้าด้าน','เสือก','เสร่อ','สาระแน','วิปริต','หน้าหี','กระแดะ','เวร','อีเวร','ไอเวร','ดัดจริต']; // ลิสต์คำหยาบตามที่มีอยู่
+// ลิสต์คำหยาบภาษาไทย
+const THAI_BAD_WORDS = ['อีสัตว์','ตาย','ไอสัตว์','สัตว์','สัส','อีสัส','ไอสัส','ควาย','อีควาย','ไอควาย','เหี้ย','อีเหี้ย','ไอเหี้ย','อีดอก','ตอแหล','อีตอแหล','ระยำ','ไอระยำ','อีระยำ','ชาติหมา','จัญไร','เฮงซวย','ชิบหาย','อีผี','โง่','อีโง่','ไอโง','ส้นตีน','หน้าโง่','ง่าว','แก่นแตด','เย็ดแม่','พ่อมึงตาย','แม่มึงตาย','ชาติชั่ว','สันดาน','เลว','อีช้างเย็ด','อีห่า','ไอห่า','ห่าราก','สัตว์นรก','ไอนรก','อีนรก','ชนชั้นต่ำ','โคตรพ่อมึง','โคตรแม่มึง','มึง','กู','หี','ควย','แตด','ฟัคยู','หน้าด้าน','เสือก','เสร่อ','สาระแน','วิปริต','หี','กระแดะ','อีเวร','ไอเวร','ดัดจริต'];
 
 // ฟังก์ชันกรองคำหยาบ
 const filterBadWords = (text) => {
@@ -38,23 +38,21 @@ class Prompter {
   }
 }
 
-// ฟังก์ชันสำหรับการเรียก API ของ Hugging Face โดยรับพารามิเตอร์การตั้งค่า
+// ฟังก์ชันเรียก Hugging Face API
 const getBotResponse = async (instruction, input = null, config = {}) => {
   const prompter = new Prompter();
   const prompt = prompter.generate_prompt(instruction, input);
 
-  // Default configuration (ปรับแต่งค่าตามความเหมาะสม)
   const defaultConfig = {
-    temperature: 0.2, 
+    temperature: 0.3, 
     top_p: 0.75, 
     top_k: 50, 
     num_beams: 2, 
-    repetition_penalty: 1.3, 
+    repetition_penalty: 1.1, 
     no_repeat_ngram: 3, 
-    max_new_tokens: 2000, 
+    max_new_tokens: 2500, 
   };
 
-  // Merge user config with default config
   const generationConfig = { ...defaultConfig, ...config };
 
   try {
@@ -87,39 +85,46 @@ const getBotResponse = async (instruction, input = null, config = {}) => {
   }
 };
 
-// ฟังก์ชันตรวจจับเจตนาของข้อความ
+// ฟังก์ชันตรวจจับเจตนา
 const getIntentFromMessage = (message) => {
   const lowerCaseMessage = message.toLowerCase();
-  if (/ทำบอท|สร้างบอท|บอทถูกสร้าง|เว็ปไซทำโดย|สร้างเว็ปไซ|เว็ปถูกสร้าง|ทำai|สร้างai|aiถูกสร้าง/.test(lowerCaseMessage)) return 'ใครเป็นคนสร้าง';
+  if (/ทำบอท|สร้างบอท|บอทตัวนี้ใคนทำ/.test(lowerCaseMessage)) return 'ใครเป็นคนสร้าง';
   else if (/รศ/.test(lowerCaseMessage)) return 'รศ';
   else if (/ตอบ/.test(lowerCaseMessage)) return 'ตอบคำถาม';
-  else if (/ผศ/.test(lowerCaseMessage)) return 'ผศ';
   else return null;
 };
 
-const formatBotResponse = (text) => {
-  let formattedText = text.trim();
-
-  // แทนที่ bullet points หรือรายการเลขที่จัดไม่ถูกต้อง
-  formattedText = formattedText.replace(/•\s*/g, "<li>");
-  formattedText = formattedText.replace(/(\d+)\.\s*/g, "<li>$1 ");
-
-  // ห่อข้อความทั้งหมดด้วย <ol> เพื่อให้รายการมีเลขหน้าข้อ
-  if (formattedText.includes("<li>")) {
-    formattedText = `<ol>${formattedText}</ol>`;
-  }
-
-  // แทนที่ \n ด้วย <br> เพื่อให้เกิดการเว้นบรรทัดใหม่
-  formattedText = formattedText.replace(/\\n/g, "<br>");
-
-  // ถ้ามีการเว้นวรรค 2 ครั้งขึ้นไป จะเปลี่ยนเป็นแค่เว้นวรรค 1 ครั้ง
-  formattedText = formattedText.replace(/\s\s+/g, ' ');
-
-  return formattedText;
+// ฟังก์ชันจัดการข้อความที่คลุมเครือ
+const handleAmbiguousMessage = (message) => {
+  return `ขออภัย เราไม่สามารถเข้าใจคำถามได้ โปรดระบุคำถามให้ชัดเจนหรือเพิ่มเติมข้อมูลที่ต้องการถาม`;
 };
 
+// ฟังก์ชันบันทึกข้อความคลุมเครือ
+const logAmbiguousMessage = (message) => {
+  console.log(`Logging ambiguous message: ${message}`);
+};
 
+// ฟังก์ชันเรียนรู้จากความคิดเห็นของผู้ใช้
+const collectUserFeedback = async (messageId, userId, feedback) => {
+  try {
+    await Feedback.create({ messageId, userId, feedback });
+    console.log('User feedback saved successfully');
+  } catch (error) {
+    console.error('Error saving user feedback:', error);
+  }
+};
 
+// ฟังก์ชันแนะนำข้อมูลเพิ่มเติม
+const suggestAdditionalInfo = (intent) => {
+  switch (intent) {
+    case 'ใครเป็นคนสร้าง':
+      return 'คุณอาจสนใจข้อมูลเพิ่มเติมเกี่ยวกับทีมพัฒนาของเรา';
+    case 'รศ':
+      return 'คุณสามารถสอบถามเพิ่มเติมเกี่ยวกับหัวข้อที่เกี่ยวข้องกับ รศ';
+    default:
+      return '';
+  }
+};
 
 // ฟังก์ชันจัดการข้อความแชท
 exports.handleChatMessage = async (req, res) => {
@@ -139,11 +144,14 @@ exports.handleChatMessage = async (req, res) => {
       } else {
         botResponse = await getBotResponse(filteredMessage, null, config);
 
-        // ตรวจสอบหากบอทไม่สามารถหาคำตอบได้
         if (!botResponse) {
-          botResponse = 'ขออภัย เราไม่มีข้อมูลในขณะนี้';
-        } else {
-          botResponse = formatBotResponse(botResponse);
+          logAmbiguousMessage(filteredMessage);
+          botResponse = handleAmbiguousMessage(filteredMessage);
+        }
+
+        const suggestion = suggestAdditionalInfo(intent);
+        if (suggestion) {
+          botResponse += `\n\n${suggestion}`;
         }
       }
     }
@@ -167,6 +175,19 @@ exports.handleChatMessage = async (req, res) => {
   } catch (error) {
     console.error("Error in handleChatMessage:", error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ฟังก์ชันจัดการความคิดเห็นของผู้ใช้
+exports.handleUserFeedback = async (req, res) => {
+  const { messageId, feedback } = req.body;
+  const userId = req.user ? req.user._id : null;
+
+  if (userId && messageId && feedback) {
+    await collectUserFeedback(messageId, userId, feedback);
+    res.sendStatus(200);
+  } else {
+    res.status(400).json({ error: 'Missing required information' });
   }
 };
 
