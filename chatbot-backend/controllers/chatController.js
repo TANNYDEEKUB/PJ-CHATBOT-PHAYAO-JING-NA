@@ -1,9 +1,9 @@
 const Session = require('../models/sessionModel');
 const axios = require('axios');
-const fewShotExamples = require('../models/data_few_shot');
+const fewShotExamples = require('../models/data_few_shot');  // Import few-shot examples
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://jaux9v1tjs68xvps.us-east-1.aws.endpoints.huggingface.cloud';
+const HUGGING_FACE_API_URL = 'https://qv3plnmqhxq5ubwj.us-east-1.aws.endpoints.huggingface.cloud';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 // ลิสต์คำหยาบภาษาไทย
@@ -31,17 +31,30 @@ class Prompter {
     };
   }
 
-  generate_prompt(instruction, input = null) {
-    return input 
+  generate_prompt(instruction, input = null, fewShot = null) {
+    let prompt = input 
       ? this.template["prompt_input"].replace("{instruction}", instruction).replace("{input}", input)
       : this.template["prompt_no_input"].replace("{instruction}", instruction);
+
+    // Add few-shot examples to the prompt
+    if (fewShot && fewShot.length > 0) {
+      const fewShotText = fewShot.map(example => `### Instruction:\n${example.instruction}\n\n### Input:\n${example.input}\n\n### Response:\n${example.response}\n`).join("\n");
+      prompt = fewShotText + prompt;  // Combine few-shot examples with the main prompt
+    }
+    
+    return prompt;
   }
 }
 
-// ฟังก์ชันเรียก Hugging Face API
-const getBotResponse = async (instruction, input = null, config = {}) => {
+// ฟังก์ชันเรียก Hugging Face API พร้อม few-shot
+// ฟังก์ชันเรียก Hugging Face API พร้อม few-shot
+const getBotResponse = async (instruction, input = null, config = {}, fewShot = []) => {
   const prompter = new Prompter();
-  const prompt = prompter.generate_prompt(instruction, input);
+  
+  // ตรวจสอบว่ามี few-shot หรือไม่ ถ้าไม่มีให้สร้าง prompt ด้วย instruction เท่านั้น
+  const prompt = fewShot.length > 0 
+    ? prompter.generate_prompt(instruction, input, fewShot)
+    : prompter.generate_prompt(instruction, input);  // ใช้เฉพาะ instruction
 
   const defaultConfig = {
     temperature: 0.3, 
@@ -50,7 +63,7 @@ const getBotResponse = async (instruction, input = null, config = {}) => {
     num_beams: 2, 
     repetition_penalty: 1.1, 
     no_repeat_ngram: 3, 
-    max_new_tokens: 2500, 
+    max_new_tokens: 1000, 
   };
 
   const generationConfig = { ...defaultConfig, ...config };
@@ -85,19 +98,50 @@ const getBotResponse = async (instruction, input = null, config = {}) => {
   }
 };
 
+
 // ฟังก์ชันตรวจจับเจตนา
+// ฟังก์ชันตรวจจับเจตนา (Intent Detection)
 const getIntentFromMessage = (message) => {
   const lowerCaseMessage = message.toLowerCase();
-  if (/ทำบอท|สร้างบอท|บอทตัวนี้ใคนทำ/.test(lowerCaseMessage)) return 'ใครเป็นคนสร้าง';
-  else if (/รศ/.test(lowerCaseMessage)) return 'รศ';
-  else if (/ตอบ/.test(lowerCaseMessage)) return 'ตอบคำถาม';
-  else return null;
+
+  // เพิ่มการตรวจจับคำถามต่าง ๆ
+  if (/ทำบอท|สร้างบอท|บอทตัวนี้ใครทำ/.test(lowerCaseMessage)) {
+    return 'ใครเป็นคนสร้าง';
+  } else if (/|/.test(lowerCaseMessage)) {
+    return '';
+  } else if (/|/.test(lowerCaseMessage)) {
+    return '';
+  } else if (/|/.test(lowerCaseMessage)) {
+    return '';
+  } else if (/'ตอบ'|ช่วยอะไรได้บ้าง/.test(lowerCaseMessage)) {
+    return 'ตอบคำถาม';
+  } else if (/'จบป เอก ศ'|จบปริญญาเอก อยากเป็น ศ /.test(lowerCaseMessage)) {
+    return 'จบปเอกศ';
+  } else if (/'จบป เอก ผศ'|จบปริญญาเอก อยากเป็น ผศ /.test(lowerCaseMessage)) {
+    return 'จบปเอกผศ';
+  } else if (/'จบป เอก รศ'|จบปริญญาเอก อยากเป็น รศ /.test(lowerCaseMessage)) {
+    return 'จบปเอกรศ';  
+  } else if (/^รศ( |$)|'รองศาสตราจารย์'/.test(lowerCaseMessage)) {
+    return 'รศ';
+  } else if (/^ผศ( |$)|'ผู้ช่วยศาสตราจารย์'/.test(lowerCaseMessage)) {
+    return 'ผศ';
+  } else if (/^ศ( |$)|'ศาสตราจารย์'/.test(lowerCaseMessage)) {
+    return 'ศ';  
+  } else {
+    return null;  // หากไม่พบเจตนา
+  }
 };
 
+
 // ฟังก์ชันจัดการข้อความที่คลุมเครือ
-const handleAmbiguousMessage = (message) => {
-  return `ขออภัย เราไม่สามารถเข้าใจคำถามได้ โปรดระบุคำถามให้ชัดเจนหรือเพิ่มเติมข้อมูลที่ต้องการถาม`;
+// ฟังก์ชันจัดการ fallback response
+const handleAmbiguousMessage = (message, intent) => {
+  if (intent === null) {
+    return `ขออภัย เราไม่สามารถเข้าใจคำถามได้ โปรดระบุคำถามให้ชัดเจนหรือเพิ่มข้อมูลที่ต้องการถาม`;
+  }
+  return `ขออภัย เราไม่สามารถให้คำตอบได้ในขณะนี้ คุณอาจต้องการข้อมูลเพิ่มเติมเกี่ยวกับหัวข้อที่เกี่ยวข้องกับ ${intent}`;
 };
+
 
 // ฟังก์ชันบันทึกข้อความคลุมเครือ
 const logAmbiguousMessage = (message) => {
@@ -134,28 +178,27 @@ exports.handleChatMessage = async (req, res) => {
 
   try {
     const filteredMessage = filterBadWords(message);
+    const intent = getIntentFromMessage(filteredMessage);
 
     if (filteredMessage !== message) {
       botResponse = 'กรุณาอย่าใช้คำหยาบ';
     } else {
-      const intent = getIntentFromMessage(filteredMessage);
+      // ถ้ามี intent และมีตัวอย่าง few-shot
       if (intent && fewShotExamples[intent]) {
-        botResponse = fewShotExamples[intent];
+        const fewShot = fewShotExamples[intent];
+        botResponse = await getBotResponse(filteredMessage, null, config, fewShot);
       } else {
+        // ถ้าไม่มี few-shot ให้บอทตอบเองโดยสร้าง prompt ตาม instruction ที่ได้รับ
         botResponse = await getBotResponse(filteredMessage, null, config);
-
+        
+        // ถ้า API ไม่สามารถตอบได้
         if (!botResponse) {
-          logAmbiguousMessage(filteredMessage);
-          botResponse = handleAmbiguousMessage(filteredMessage);
-        }
-
-        const suggestion = suggestAdditionalInfo(intent);
-        if (suggestion) {
-          botResponse += `\n\n${suggestion}`;
+          botResponse = handleAmbiguousMessage(filteredMessage, intent);
         }
       }
     }
 
+    // การจัดการ session และการตอบกลับของบอท
     if (userId) {
       let session;
       if (sessionId) {
@@ -177,6 +220,8 @@ exports.handleChatMessage = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 // ฟังก์ชันจัดการความคิดเห็นของผู้ใช้
 exports.handleUserFeedback = async (req, res) => {
