@@ -3,11 +3,11 @@ const axios = require('axios');
 const fewShotExamples = require('../models/data_few_shot');  // Import few-shot examples
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://uu2h4pxb2jwpq2x2.us-east-1.aws.endpoints.huggingface.cloud';
+const HUGGING_FACE_API_URL = 'https://qfos2phtvw3cnejq.us-east-1.aws.endpoints.huggingface.cloud';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 // ลิสต์คำหยาบภาษาไทย
-const THAI_BAD_WORDS = ['อีสัตว์','ตาย','ไอสัตว์','สัตว์','สัส','อีสัส','ไอสัส','ควาย','อีควาย','ไอควาย','เหี้ย','อีเหี้ย','ไอเหี้ย','อีดอก','ตอแหล','อีตอแหล','ระยำ','ไอระยำ','อีระยำ','ชาติหมา','จัญไร','เฮงซวย','ชิบหาย','อีผี','โง่','อีโง่','ไอโง','ส้นตีน','หน้าโง่','ง่าว','แก่นแตด','เย็ดแม่','พ่อมึงตาย','แม่มึงตาย','ชาติชั่ว','สันดาน','เลว','อีช้างเย็ด','อีห่า','ไอห่า','ห่าราก','สัตว์นรก','ไอนรก','อีนรก','ชนชั้นต่ำ','โคตรพ่อมึง','โคตรแม่มึง','มึง','กู','หี','ควย','แตด','ฟัคยู','หน้าด้าน','เสือก','เสร่อ','สาระแน','วิปริต','หี','กระแดะ','อีเวร','ไอเวร','ดัดจริต'];
+const THAI_BAD_WORDS = ['อีสัตว์', 'ตาย', 'ไอสัตว์', 'สัตว์', 'สัส', 'อีสัส', 'ไอสัส', 'ควาย', 'อีควาย', 'ไอควาย', 'เหี้ย', 'อีเหี้ย', 'ไอเหี้ย', 'อีดอก', 'ตอแหล', 'อีตอแหล', 'ระยำ', 'ไอระยำ', 'อีระยำ', 'ชาติหมา', 'จัญไร', 'เฮงซวย', 'ชิบหาย', 'อีผี', 'โง่', 'อีโง่', 'ไอโง', 'ส้นตีน', 'หน้าโง่', 'ง่าว', 'แก่นแตด', 'เย็ดแม่', 'พ่อมึงตาย', 'แม่มึงตาย', 'ชาติชั่ว', 'สันดาน', 'เลว', 'อีช้างเย็ด', 'อีห่า', 'ไอห่า', 'ห่าราก', 'สัตว์นรก', 'ไอนรก', 'อีนรก', 'ชนชั้นต่ำ', 'โคตรพ่อมึง', 'โคตรแม่มึง', 'มึง', 'กู', 'หี', 'ควย', 'แตด', 'ฟัคยู', 'หน้าด้าน', 'เสือก', 'เสร่อ', 'สาระแน', 'วิปริต', 'กระแดะ', 'อีเวร', 'ไอเวร', 'ดัดจริต'];
 
 // ฟังก์ชันกรองคำหยาบ
 const filterBadWords = (text) => {
@@ -26,7 +26,7 @@ class Prompter {
     this.template = {
       // ถ้าไม่มี input ให้ใช้ template นี้
       "prompt_input": "{instruction}\n\n### Response:\n",
-      "prompt_no_input": "{instruction}\n\n### Response:\n", 
+      "prompt_no_input": "{instruction}\n\n### Response:\n",
       "response_split": "### Response:"
     };
   }
@@ -41,7 +41,7 @@ class Prompter {
     }
 
     // สร้าง prompt โดยลบ Input หากไม่มี
-    let prompt = input 
+    let prompt = input
       ? this.template["prompt_input"].replace("{instruction}", instruction)
       : this.template["prompt_no_input"].replace("{instruction}", instruction);
 
@@ -55,19 +55,19 @@ class Prompter {
 // ฟังก์ชันเรียก Hugging Face API พร้อม few-shot
 const getBotResponse = async (instruction, input = null, config = {}, fewShot = []) => {
   const prompter = new Prompter();
-  
+
   // สร้าง prompt ที่มี few-shot
   const prompt = prompter.generate_prompt(instruction, input, fewShot);
 
   // สร้าง config สำหรับการ generate response
   const defaultConfig = {
-    temperature: 0.7, 
-    top_p: 0.75, 
-    top_k: 50, 
-    num_beams: 2, 
-    repetition_penalty: 1.3, 
-    no_repeat_ngram: 3, 
-    max_new_tokens: 350, 
+    temperature: 0.7,
+    top_p: 0.75,
+    top_k: 50,
+    num_beams: 2,
+    repetition_penalty: 1.1,
+    no_repeat_ngram: 5,
+    max_new_tokens: 1000,
   };
 
   const generationConfig = { ...defaultConfig, ...config };
@@ -113,7 +113,6 @@ const getBotResponse = async (instruction, input = null, config = {}, fewShot = 
 };
 
 // ฟังก์ชันกรอง intent ที่ไม่ต้องการจากการตอบบอท
-// ฟังก์ชันกรอง intent ที่ไม่ต้องการจากการตอบบอท
 const cleanResponseText = (text) => {
   return text
     .replace(/\bคุณสมบัติเฉพาะตำแหน่ง\b/g, '')  // ลบ 'คุณสมบัติเฉพาะตำแหน่ง'
@@ -125,7 +124,6 @@ const cleanResponseText = (text) => {
     .trim();                                        // ลบช่องว่างส่วนเกิน
 };
 
-
 // ฟังก์ชันตรวจจับเจตนา (Intent Detection) ที่ปรับปรุง
 const getIntentFromMessage = (message) => {
   const lowerCaseMessage = message.toLowerCase();
@@ -133,13 +131,13 @@ const getIntentFromMessage = (message) => {
   // เพิ่มการตรวจจับคำถามต่าง ๆ
   if (/ทำ.*บอท|สร้าง.*บอท|บอท.*ทำ|สร้าง.*บอท/.test(lowerCaseMessage)) {
     return 'ใครเป็นคนสร้าง';
-  } else if (/งาน.*รศ/.test(lowerCaseMessage)) { // ลบ \s* ออก
+  } else if (/งาน.*รศ/.test(lowerCaseMessage)) {
     return 'รศ';
   } else if (/งาน.*ผศ/.test(lowerCaseMessage)) {
     return 'ผศ';
   } else if (/งาน.*(?:^|\s)ศ(?:$|\s)|งาน.*(?:^|\s)ศ(?:$|\s)/.test(lowerCaseMessage)) {
     return 'ศจ';
-  } else if (/สวัส|บอท|ไง/.test(lowerCaseMessage)) {
+  } else if (/สวัส|บอท|ถาม/.test(lowerCaseMessage)) {
     return 'ทักทาย';
   } else if (/หลักเกณฑ์.*ทางวิชาการ/.test(lowerCaseMessage)) {
     return 'หลักเกณฑ์การแต่งตั้งตำแหน่งทางวิชาการ';
@@ -161,12 +159,17 @@ const getIntentFromMessage = (message) => {
     return 'คณะกรรมการ';
   } else if (/อธิบาย.*กพอ|กพอ/.test(lowerCaseMessage)) {
     return 'กพอ';
-  } else {  
+  } else if (/จบ.*ป\.?\s*เอก.*ตำแหน่ง|จบ.*ป\.?\s*เอก.*ขอ/.test(lowerCaseMessage)) {
+    return 'เมื่อจบปริญญาเอก';
+  } else if (/จบ.*ป\.?\s*โทร.*ตำแหน่ง|จบ.*ป\.?\s*โทร.*ขอ/.test(lowerCaseMessage)) {
+    return 'เมื่อจบปริญญาโทร';
+  } else if (/จบ.*ป\.?\s*ตรี.*ตำแหน่ง|จบ.*ป\.?\s*ตรี.*ขอ/.test(lowerCaseMessage)) {
+    return 'เมื่อจบปริญญาตรี';
+  } else {
     return null;
   }
 };
 
-// ฟังก์ชันจัดการข้อความแชท ที่ปรับปรุงให้ใช้งานกับ few-shot ได้มีประสิทธิภาพมากขึ้น
 // ฟังก์ชันจัดการข้อความแชท
 exports.handleChatMessage = async (req, res) => {
   const { message, sessionId, config } = req.body;
@@ -220,7 +223,6 @@ exports.handleChatMessage = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 // ฟังก์ชันจัดการความคิดเห็นของผู้ใช้
 exports.handleUserFeedback = async (req, res) => {
