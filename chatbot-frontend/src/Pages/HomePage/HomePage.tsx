@@ -37,11 +37,15 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
   const [isEditingName, setIsEditingName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
   const [isSending, setIsSending] = useState<boolean>(false);
-  const [isEditingMessage, setIsEditingMessage] = useState(false);
-  const [editMessageIndex, setEditMessageIndex] = useState<number | null>(null);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // กำหนด state สำหรับการแจ้งเตือนหากไม่ได้ตั้งคำถาม
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  // กำหนด state สำหรับการพิมพ์ของบอท
+  const [isBotTyping, setIsBotTyping] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -85,14 +89,40 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isSending) return;
+    // Regular expression เพื่อกรองข้อความที่มีความหมาย
+    const validPattern = /^[ก-๛a-zA-Z0-9\s]+$/; // กรองเฉพาะอักขระภาษาไทย, ภาษาอังกฤษ, ตัวเลข และช่องว่าง
 
-    if (isEditingMessage) {
-      handleSaveEditedMessage();
+    // ตรวจจับข้อความที่มีตัวอักษรซ้ำกันมากกว่า 3 ตัวติดกัน หรือซ้ำเป็นกลุ่ม (เช่น กฟกฟกฟ)
+    const gibberishPattern = /(.)\1{3,}|(.)(.)\2{3,}/; // บล็อกข้อความที่มีอักษรซ้ำติดกันเกิน 3 ตัว หรือซ้ำเป็นคู่เช่น "กฟกฟกฟกฟ"
+
+    // ตรวจจับข้อความที่มีแต่สระ
+    const vowelsPattern = /^[ะาิีึืุูแโใไ็่้๊๋์]+$/; // บล็อกเฉพาะประโยคที่มีแต่สระ
+
+    
+    
+
+    if (!input.trim()) {
+      setWarningMessage("กรุณาตั้งคำถามในช่องใส่คำถาม");
       return;
     }
 
+    // ตรวจสอบว่าข้อความที่พิมพ์เป็นข้อความสุ่มหรือไม่
+    if (
+      !validPattern.test(input.trim()) || 
+      gibberishPattern.test(input.trim()) || 
+      vowelsPattern.test(input.trim())  
+    ) {
+      const errorMessage = { sender: "bot", text: "ขออภัย บอทไม่สามารถทำความเข้าใจคำถามได้" };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setInput(""); // ล้าง input
+      return;
+    }
+
+    if (isSending) return;
+
     setIsSending(true);
+    setWarningMessage(null);
+    setIsBotTyping(true); // บอทเริ่มพิมพ์
 
     const userMessage = { sender: "user", text: input };
     const newMessages = [...messages, userMessage];
@@ -106,21 +136,25 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
-
-      const botMessage = {
-        sender: "bot",
-        text: response.data.reply
-          .replace(/\\n/g, "<br>") // แปลง \n เป็น <br>
-          .replace(/(\d+)\.\s/g, "<li>") // แปลงตัวเลขและจุดให้เป็น <li>
-          .replace(/<li>/g, "<li style='margin-bottom: 10px;'>") // เพิ่มการเว้นวรรคระหว่างบรรทัดด้วย margin-bottom
-          .replace(/\n/g, "<br>") // แปลง \n อื่นๆ เป็น <br> อีกรอบเพื่อความแน่ใจ
-      };
-
+      const botMessage = { sender: "bot", text: response.data.reply };
       setMessages([...newMessages, botMessage]);
 
       if (!sessionId) {
         setSessionId(response.data.sessionId);
+        const updatedHistory = [...chatHistory, { _id: response.data.sessionId, name: "การสนทนาใหม่", messages: [...newMessages, botMessage] }];
+        setChatHistory(updatedHistory);
+        localStorage.setItem(`chatHistory_${token}`, JSON.stringify(updatedHistory));
+      } else {
+        const updatedChatHistory = chatHistory.map((chat) =>
+          chat._id === sessionId
+            ? { ...chat, messages: [...chat.messages, userMessage, botMessage] }
+            : chat
+        );
+        setChatHistory(updatedChatHistory);
+        localStorage.setItem(`chatHistory_${token}`, JSON.stringify(updatedChatHistory));
       }
+
+      document.querySelector("textarea")?.style.setProperty("height", "40px");
     } catch (error) {
       console.error(error);
       const errorMessage = { sender: "bot", text: "ขออภัย ไม่สามารถตอบกลับได้ในขณะนี้" };
@@ -129,24 +163,9 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
 
     setInput("");
     setIsSending(false);
-  };
+    setIsBotTyping(false); // บอทหยุดพิมพ์
+};
 
-  const handleEditMessage = (index: number) => {
-    setIsEditingMessage(true);
-    setEditMessageIndex(index);
-    setInput(messages[index].text);
-  };
-
-  const handleSaveEditedMessage = () => {
-    if (editMessageIndex !== null && input.trim()) {
-      const updatedMessages = [...messages];
-      updatedMessages[editMessageIndex] = { ...updatedMessages[editMessageIndex], text: input };
-      setMessages(updatedMessages);
-      setIsEditingMessage(false);
-      setEditMessageIndex(null);
-      setInput("");
-    }
-  };
 
   const loadSession = (session: { _id: string; name: string; messages: { sender: string; text: string }[] }) => {
     if (isEditingName !== null) return;
@@ -252,6 +271,7 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
     <>
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
+      {/* ปุ่มเปิด/ปิดเมนูประวัติการสนทนา */}
       <button onClick={toggleChatHistory} className="chat-history-toggle-btn">
         <FontAwesomeIcon icon={isChatHistoryOpen ? faTimes : faBars} />
       </button>
@@ -355,30 +375,37 @@ export const HomePage: React.FC<HomePageProps> = ({ token, setToken }) => {
                     className={`py-2 px-4 rounded-lg max-w-[75%] whitespace-pre-wrap break-words ${
                       message.sender === "user" ? "user-bubble" : "bot-bubble"
                     }`}
-                    dangerouslySetInnerHTML={{ __html: message.text }}
-                  ></p>
-                  {message.sender === "user" && (
-                    <button onClick={() => handleEditMessage(index)}>
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                  )}
+                  >
+                    {message.text}
+                  </p>
                 </div>
               ))}
+              {isBotTyping && (
+                <div className="flex items-start mb-10">
+                  <FontAwesomeIcon icon={faRobot} className="text-4xl m-2" />
+                  <p className="py-2 px-4 rounded-lg max-w-[75%] whitespace-pre-wrap break-words bot-bubble">
+                    บอทกำลังพิมพ์...
+                  </p>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
-            <div id="chat" className="text-xl flex flex-row gap-4 m-4">
+            <div id="chat" className="text-xl flex flex-col gap-4 m-4">
+              {warningMessage && (
+                <p className="text-red-500 text-center mb-2">{warningMessage}</p>
+              )}
               <textarea
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${e.target.scrollHeight}px`;
+                  e.target.style.height = "auto"; // รีเซ็ตความสูงก่อน
+                  e.target.style.height = `${e.target.scrollHeight}px`; // ปรับความสูงให้พอดีกับเนื้อหา
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !isSending) {
                     e.preventDefault();
-                    handleSendMessage();
+                    handleSendMessage(); // เรียกฟังก์ชันส่งคำถาม
                   }
                 }}
                 placeholder="ช่องใส่คำถาม"

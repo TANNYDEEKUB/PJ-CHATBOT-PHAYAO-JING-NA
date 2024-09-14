@@ -3,7 +3,7 @@ const axios = require('axios');
 const fewShotExamples = require('../models/data_few_shot');  // Import few-shot examples
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://qv3plnmqhxq5ubwj.us-east-1.aws.endpoints.huggingface.cloud';
+const HUGGING_FACE_API_URL = 'https://uu2h4pxb2jwpq2x2.us-east-1.aws.endpoints.huggingface.cloud';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 // ลิสต์คำหยาบภาษาไทย
@@ -24,46 +24,50 @@ class Prompter {
   constructor(template_name = "", verbose = false) {
     this._verbose = verbose;
     this.template = {
-      "description": "Template used by Alpaca-LoRA.",
-      "prompt_input": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n",
-      "prompt_no_input": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Response:\n",
+      // ถ้าไม่มี input ให้ใช้ template นี้
+      "prompt_input": "{instruction}\n\n### Response:\n",
+      "prompt_no_input": "{instruction}\n\n### Response:\n", 
       "response_split": "### Response:"
     };
   }
 
-  generate_prompt(instruction, input = null, fewShot = null) {
+  generate_prompt(instruction, input = null, fewShot = []) {
+    // ตรวจสอบว่ามี fewShot หรือไม่ ถ้ามีก็เพิ่มลงไป
+    let fewShotText = "";
+    if (fewShot.length > 0) {
+      fewShotText = fewShot.map(example =>
+        `### Instruction:\n${example.instruction}\n### Input:\n${example.input}\n### Response:\n${example.response}\n`
+      ).join("\n");
+    }
+
+    // สร้าง prompt โดยลบ Input หากไม่มี
     let prompt = input 
-      ? this.template["prompt_input"].replace("{instruction}", instruction).replace("{input}", input)
+      ? this.template["prompt_input"].replace("{instruction}", instruction)
       : this.template["prompt_no_input"].replace("{instruction}", instruction);
 
-    // Add few-shot examples to the prompt
-    if (fewShot && fewShot.length > 0) {
-      const fewShotText = fewShot.map(example => `### Instruction:\n${example.instruction}\n\n### Input:\n${example.input}\n\n### Response:\n${example.response}\n`).join("\n");
-      prompt = fewShotText + prompt;  // Combine few-shot examples with the main prompt
-    }
-    
+    // รวม few-shot กับ prompt หลัก
+    prompt = fewShotText + prompt;
+
     return prompt;
   }
 }
 
 // ฟังก์ชันเรียก Hugging Face API พร้อม few-shot
-// ฟังก์ชันเรียก Hugging Face API พร้อม few-shot
 const getBotResponse = async (instruction, input = null, config = {}, fewShot = []) => {
   const prompter = new Prompter();
   
-  // ตรวจสอบว่ามี few-shot หรือไม่ ถ้าไม่มีให้สร้าง prompt ด้วย instruction เท่านั้น
-  const prompt = fewShot.length > 0 
-    ? prompter.generate_prompt(instruction, input, fewShot)
-    : prompter.generate_prompt(instruction, input);  // ใช้เฉพาะ instruction
+  // สร้าง prompt ที่มี few-shot
+  const prompt = prompter.generate_prompt(instruction, input, fewShot);
 
+  // สร้าง config สำหรับการ generate response
   const defaultConfig = {
-    temperature: 0.3, 
+    temperature: 0.7, 
     top_p: 0.75, 
     top_k: 50, 
     num_beams: 2, 
-    repetition_penalty: 1.1, 
+    repetition_penalty: 1.3, 
     no_repeat_ngram: 3, 
-    max_new_tokens: 1000, 
+    max_new_tokens: 350, 
   };
 
   const generationConfig = { ...defaultConfig, ...config };
@@ -81,95 +85,88 @@ const getBotResponse = async (instruction, input = null, config = {}, fewShot = 
     );
 
     if (response.data && response.data.length > 0) {
-      const generatedText = response.data[0].generated_text || null;
+      let generatedText = response.data[0].generated_text || null;
+
       if (generatedText) {
+        // ตัดข้อความที่ไม่ต้องการออก: Instruction, Input และลบเครื่องหมาย ***
         const responseSplit = generatedText.split("### Response:");
-        return responseSplit.length > 1 ? responseSplit[1].trim() : generatedText.trim();
+        let cleanedText = responseSplit.length > 1 ? responseSplit[1].trim() : generatedText.trim();
+
+        // ลบเครื่องหมาย ***
+        cleanedText = cleanedText.replace(/\*\*\*/g, '').trim();
+
+        // ลบเครื่องหมาย ### ออกจากข้อความ
+        cleanedText = cleanedText.replace(/###/g, '').trim();
+
+        return cleanedText;
       } else {
         return null;
       }
     } else {
-      console.error("No response data from Hugging Face API");
+      console.error("ไม่มีข้อมูลตอบกลับจาก Hugging Face API");
       return null;
     }
   } catch (error) {
-    console.error('Error calling Hugging Face API:', error.response ? error.response.data : error.message);
+    console.error('เกิดข้อผิดพลาดในการเรียก Hugging Face API:', error.response ? error.response.data : error.message);
     return null;
   }
 };
 
+// ฟังก์ชันกรอง intent ที่ไม่ต้องการจากการตอบบอท
+// ฟังก์ชันกรอง intent ที่ไม่ต้องการจากการตอบบอท
+const cleanResponseText = (text) => {
+  return text
+    .replace(/\bคุณสมบัติเฉพาะตำแหน่ง\b/g, '')  // ลบ 'คุณสมบัติเฉพาะตำแหน่ง'
+    .replace(/\bรศ\b/g, '')                         // ลบ 'รศ'
+    .replace(/\bผศ\b/g, '')                         // ลบ 'ผศ'
+    .replace(/\bศ\b/g, '')                          // ลบ 'ศ'
+    .replace(/\bคณะกรรมการ\b/g, '')                // ลบ 'คณะกรรมการ'
+    .replace(/###/g, '')                            // ลบ ###
+    .trim();                                        // ลบช่องว่างส่วนเกิน
+};
 
-// ฟังก์ชันตรวจจับเจตนา
-// ฟังก์ชันตรวจจับเจตนา (Intent Detection)
+
+// ฟังก์ชันตรวจจับเจตนา (Intent Detection) ที่ปรับปรุง
 const getIntentFromMessage = (message) => {
   const lowerCaseMessage = message.toLowerCase();
 
   // เพิ่มการตรวจจับคำถามต่าง ๆ
-  if (/ทำบอท|สร้างบอท|บอทตัวนี้ใครทำ/.test(lowerCaseMessage)) {
+  if (/ทำ.*บอท|สร้าง.*บอท|บอท.*ทำ|สร้าง.*บอท/.test(lowerCaseMessage)) {
     return 'ใครเป็นคนสร้าง';
-  } else if (/|/.test(lowerCaseMessage)) {
-    return '';
-  } else if (/|/.test(lowerCaseMessage)) {
-    return '';
-  } else if (/|/.test(lowerCaseMessage)) {
-    return '';
-  } else if (/'ตอบ'|ช่วยอะไรได้บ้าง/.test(lowerCaseMessage)) {
-    return 'ตอบคำถาม';
-  } else if (/'จบป เอก ศ'|จบปริญญาเอก อยากเป็น ศ /.test(lowerCaseMessage)) {
-    return 'จบปเอกศ';
-  } else if (/'จบป เอก ผศ'|จบปริญญาเอก อยากเป็น ผศ /.test(lowerCaseMessage)) {
-    return 'จบปเอกผศ';
-  } else if (/'จบป เอก รศ'|จบปริญญาเอก อยากเป็น รศ /.test(lowerCaseMessage)) {
-    return 'จบปเอกรศ';  
-  } else if (/^รศ( |$)|'รองศาสตราจารย์'/.test(lowerCaseMessage)) {
+  } else if (/งาน.*รศ/.test(lowerCaseMessage)) { // ลบ \s* ออก
     return 'รศ';
-  } else if (/^ผศ( |$)|'ผู้ช่วยศาสตราจารย์'/.test(lowerCaseMessage)) {
+  } else if (/งาน.*ผศ/.test(lowerCaseMessage)) {
     return 'ผศ';
-  } else if (/^ศ( |$)|'ศาสตราจารย์'/.test(lowerCaseMessage)) {
-    return 'ศ';  
-  } else {
-    return null;  // หากไม่พบเจตนา
+  } else if (/งาน.*(?:^|\s)ศ(?:$|\s)|งาน.*(?:^|\s)ศ(?:$|\s)/.test(lowerCaseMessage)) {
+    return 'ศจ';
+  } else if (/สวัส|บอท|ไง/.test(lowerCaseMessage)) {
+    return 'ทักทาย';
+  } else if (/หลักเกณฑ์.*ทางวิชาการ/.test(lowerCaseMessage)) {
+    return 'หลักเกณฑ์การแต่งตั้งตำแหน่งทางวิชาการ';
+  } else if (/การยกเลิกประกาศ|ประกาศ.*กพอ/.test(lowerCaseMessage)) {
+    return 'การยกเลิกประกาศเดิมและออกประกาศใหม่';
+  } else if (/แต่งตั้งเฉพาะด้าน|หมวด.*เฉพาะด้าน/.test(lowerCaseMessage)) {
+    return 'หมวดการแต่งตั้งเฉพาะด้าน';
+  } else if (/แต่งตั้งโดยวิธีพิเศษ|การแต่งตั้ง.*พิเศษ/.test(lowerCaseMessage)) {
+    return 'การแต่งตั้งโดยวิธีพิเศษ';
+  } else if (/ประเภท.*ผลงาน|ชนิด.*ผลงาน/.test(lowerCaseMessage)) {
+    return 'ประเภทของผลงานทางวิชาการที่ต้องการ';
+  } else if (/การพิจารณาจริยธรรม|จริยธรรม.*ทางวิชาการ/.test(lowerCaseMessage)) {
+    return 'การพิจารณาจริยธรรมและจรรยาบรรณทางวิชาการ';
+  } else if (/การประเมินผลงานทางวิชาการ|ผลประเมิน.*ทางวิชาการ/.test(lowerCaseMessage)) {
+    return 'วิธีการประเมินผลงานทางวิชาการ';
+  } else if (/คุณสมบัติเฉพาะตำแหน่ง|คุณสมบัติ.*ตำแหน่ง/.test(lowerCaseMessage)) {
+    return 'คุณสมบัติเฉพาะตำแหน่ง';
+  } else if (/กรรมการ.*ตำแหน่ง|คณะ.*ตำแหน่ง|กรรมการ/.test(lowerCaseMessage)) {
+    return 'คณะกรรมการ';
+  } else if (/อธิบาย.*กพอ|กพอ/.test(lowerCaseMessage)) {
+    return 'กพอ';
+  } else {  
+    return null;
   }
 };
 
-
-// ฟังก์ชันจัดการข้อความที่คลุมเครือ
-// ฟังก์ชันจัดการ fallback response
-const handleAmbiguousMessage = (message, intent) => {
-  if (intent === null) {
-    return `ขออภัย เราไม่สามารถเข้าใจคำถามได้ โปรดระบุคำถามให้ชัดเจนหรือเพิ่มข้อมูลที่ต้องการถาม`;
-  }
-  return `ขออภัย เราไม่สามารถให้คำตอบได้ในขณะนี้ คุณอาจต้องการข้อมูลเพิ่มเติมเกี่ยวกับหัวข้อที่เกี่ยวข้องกับ ${intent}`;
-};
-
-
-// ฟังก์ชันบันทึกข้อความคลุมเครือ
-const logAmbiguousMessage = (message) => {
-  console.log(`Logging ambiguous message: ${message}`);
-};
-
-// ฟังก์ชันเรียนรู้จากความคิดเห็นของผู้ใช้
-const collectUserFeedback = async (messageId, userId, feedback) => {
-  try {
-    await Feedback.create({ messageId, userId, feedback });
-    console.log('User feedback saved successfully');
-  } catch (error) {
-    console.error('Error saving user feedback:', error);
-  }
-};
-
-// ฟังก์ชันแนะนำข้อมูลเพิ่มเติม
-const suggestAdditionalInfo = (intent) => {
-  switch (intent) {
-    case 'ใครเป็นคนสร้าง':
-      return 'คุณอาจสนใจข้อมูลเพิ่มเติมเกี่ยวกับทีมพัฒนาของเรา';
-    case 'รศ':
-      return 'คุณสามารถสอบถามเพิ่มเติมเกี่ยวกับหัวข้อที่เกี่ยวข้องกับ รศ';
-    default:
-      return '';
-  }
-};
-
+// ฟังก์ชันจัดการข้อความแชท ที่ปรับปรุงให้ใช้งานกับ few-shot ได้มีประสิทธิภาพมากขึ้น
 // ฟังก์ชันจัดการข้อความแชท
 exports.handleChatMessage = async (req, res) => {
   const { message, sessionId, config } = req.body;
@@ -178,23 +175,26 @@ exports.handleChatMessage = async (req, res) => {
 
   try {
     const filteredMessage = filterBadWords(message);
-    const intent = getIntentFromMessage(filteredMessage);
+    const intent = getIntentFromMessage(filteredMessage);  // รับ intent
 
     if (filteredMessage !== message) {
       botResponse = 'กรุณาอย่าใช้คำหยาบ';
     } else {
-      // ถ้ามี intent และมีตัวอย่าง few-shot
+      // ถ้ามี intent และมีตัวอย่าง few-shot ให้เรียกใช้
       if (intent && fewShotExamples[intent]) {
         const fewShot = fewShotExamples[intent];
-        botResponse = await getBotResponse(filteredMessage, null, config, fewShot);
+        botResponse = await getBotResponse(intent, null, config, fewShot); // ใช้ intent ในการสร้าง prompt
       } else {
         // ถ้าไม่มี few-shot ให้บอทตอบเองโดยสร้าง prompt ตาม instruction ที่ได้รับ
         botResponse = await getBotResponse(filteredMessage, null, config);
-        
-        // ถ้า API ไม่สามารถตอบได้
-        if (!botResponse) {
-          botResponse = handleAmbiguousMessage(filteredMessage, intent);
+
+        // ตรวจสอบและลบ intent ที่ถูก return ไม่ให้แสดงในคำตอบ
+        if (botResponse.includes(filteredMessage)) {
+          botResponse = botResponse.replace(new RegExp(filteredMessage, 'g'), '').trim();
         }
+
+        // กรองคำ intent ที่ไม่ต้องการ เช่น 'คุณสมบัติเฉพาะตำแหน่ง', 'คณะกรรมการ'
+        botResponse = cleanResponseText(botResponse); // Clean unwanted terms
       }
     }
 
@@ -220,7 +220,6 @@ exports.handleChatMessage = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 
 // ฟังก์ชันจัดการความคิดเห็นของผู้ใช้

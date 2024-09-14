@@ -2,6 +2,14 @@ const express = require('express');
 const { handleChatMessage, getChatHistory, deleteChatSession, updateSessionName } = require('../controllers/chatController');
 const authMiddleware = require('../middleware/authenticateToken');
 
+console.log({
+    handleChatMessage,
+    getChatHistory,
+    deleteChatSession,
+    updateSessionName,
+    authMiddleware,
+}); // Add this for debugging
+
 const router = express.Router();
 
 // POST to handle chat message
