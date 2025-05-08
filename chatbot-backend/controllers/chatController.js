@@ -3,7 +3,7 @@ const axios = require('axios');
 const fewShotExamples = require('../models/data_few_shot');  // Import few-shot examples
 const nlp = require('compromise'); // Import NLP library
 
-const HUGGING_FACE_API_URL = 'https://qfos2phtvw3cnejq.us-east-1.aws.endpoints.huggingface.cloud';
+const HUGGING_FACE_API_URL = 'https://huggingface.co/PisutDeekub/PJ-MINI-MODEL-FINAL';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 // ลิสต์คำหยาบภาษาไทย
